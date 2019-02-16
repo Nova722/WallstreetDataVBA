@@ -1,0 +1,109 @@
+Sub Stockcounter()
+'create worksheet loop
+Dim WS As Worksheet
+    For Each WS In ActiveWorkbook.Worksheets
+    WS.Activate
+    
+        ' variable to automatically find the last cell
+        last = WS.Cells(Rows.Count, 1).End(xlUp).Row
+
+
+        Cells(1, "I").Value = "Ticker"
+        Cells(1, "J").Value = "Yearly Change"
+        Range("J1").ColumnWidth = 15
+        Cells(1, "K").Value = "Percent Change"
+        Range("K1").ColumnWidth = 15
+        Cells(1, "L").Value = "Total Stock Volume"
+        
+        'Create Variable to hold Value
+        Dim Yearlyc As Double
+        Dim Openp As Double
+        Dim Closep As Double
+        Dim TickerName As String
+        Dim PercentChange As Double
+        Dim Volume As Double
+        Dim Column As Integer
+        Dim Row As Double
+        Dim i As Long
+        
+        Volume = 0
+        Row = 2
+        Column = 1
+        
+        'define open price no 1
+        Openp = Cells(2, Column + 2).Value
+
+        
+        For i = 2 To last
+         ' recognize all the ticker symbols and print them in the new table
+         ' by recognizing when val does not match
+            If Cells(i + 1, Column).Value <> Cells(i, Column).Value Then
+                TickerName = Cells(i, Column).Value
+                Cells(Row, Column + 8).Value = TickerName
+                ' Define close price
+                Closep = Cells(i, Column + 5).Value
+                ' Define yearly change
+                Yearlyc = Closep - Openp
+                Cells(Row, Column + 9).Value = Yearlyc
+                ' Percent Change to fill in null values
+                If (Openp = 0 And Closep = 0) Then
+                ' Percent Change to fill in denominator 0, would make a 100% change
+                    PercentChange = 0
+                ElseIf (Openp = 0 And Closep <> 0) Then
+                    PercentChange = 1
+                ' Percent Change with non 0s
+                Else
+                    PercentChange = Yearlyc / Openp
+                    Cells(Row, Column + 10).Value = PercentChange
+                    Cells(Row, Column + 10).NumberFormat = "0.00%"
+                End If
+                ' Total Volume
+                Volume = Volume + Cells(i, Column + 6).Value
+                Cells(Row, Column + 11).Value = Volume
+                ' code so that summary row is added after one another, not on top
+                Row = Row + 1
+                ' Open price ot 2
+                Openp = Cells(i + 1, Column + 2)
+                Volume = 0
+            Else
+                Volume = Volume + Cells(i, Column + 6).Value
+            End If
+        Next i
+        
+        ' variable to automatically find the last cell for Yearly Change
+        Yearlychangelast = WS.Cells(Rows.Count, Column + 8).End(xlUp).Row
+        ' Color the cells
+        For j = 2 To Yearlychangelast
+            If (Cells(j, Column + 9).Value > 0 Or Cells(j, Column + 9).Value = 0) Then
+                Cells(j, Column + 9).Interior.ColorIndex = 10
+            ElseIf Cells(j, Column + 9).Value < 0 Then
+                Cells(j, Column + 9).Interior.ColorIndex = 3
+            End If
+        Next j
+        
+        ' Greatest % Increase, % Decrease, & Total Volume
+        Cells(2, Column + 13).Value = "Greatest % Increase"
+        Range("N1").ColumnWidth = 20
+        Cells(3, Column + 13).Value = "Greatest % Decrease"
+        Cells(4, Column + 13).Value = "Greatest Total Volume"
+        Cells(1, Column + 14).Value = "Ticker"
+        Cells(1, Column + 15).Value = "Value"
+        ' Look through each rows to find the greatest value
+        For Z = 2 To Yearlychangelast
+            If Cells(Z, Column + 10).Value = Application.WorksheetFunction.Max(WS.Range("K2:K" & Yearlychangelast)) Then
+                Cells(2, Column + 14).Value = Cells(Z, Column + 8).Value
+                Cells(2, Column + 15).Value = Cells(Z, Column + 10).Value
+                Cells(2, Column + 15).NumberFormat = "0.00%"
+            ElseIf Cells(Z, Column + 10).Value = Application.WorksheetFunction.Min(WS.Range("K2:K" & Yearlychangelast)) Then
+                Cells(3, Column + 14).Value = Cells(Z, Column + 8).Value
+                Cells(3, Column + 15).Value = Cells(Z, Column + 10).Value
+                Cells(3, Column + 15).NumberFormat = "0.00%"
+            ElseIf Cells(Z, Column + 11).Value = Application.WorksheetFunction.Max(WS.Range("L2:L" & Yearlychangelast)) Then
+                Cells(4, Column + 14).Value = Cells(Z, Column + 8).Value
+                Cells(4, Column + 15).Value = Cells(Z, Column + 11).Value
+            End If
+        Next Z
+        
+    Next WS
+        
+End Sub
